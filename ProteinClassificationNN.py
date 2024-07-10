@@ -60,3 +60,46 @@ test_array = np.array(test_encoded_sequences)
 
 train_labels = np.array(train_labels)
 test_labels = np.array(test_labels)
+
+
+#Create train and test datasets and model
+class ProteinDataset(Dataset):
+    def __init__(self, sequences, labels):
+        self.sequences = sequences
+        self.labels = labels
+
+    def __len__(self):
+        return len(self.sequences)
+
+    def __getitem__(self, idx):
+        sequence = self.sequences[idx]
+        label = self.labels[idx]
+        return torch.tensor(sequence, dtype=torch.float32), torch.tensor(label, dtype=torch.long)
+
+
+train_dataset = ProteinDataset(train_array, train_labels)
+test_dataset = ProteinDataset(test_array, test_labels)
+
+class ProteinModel(nn.Module):
+    def __init__(self, input_dim, hidden_dim, output_dim):
+        super(ProteinModel, self).__init__()
+        self.fc1 = nn.Linear(input_dim, hidden_dim)
+        self.relu = nn.ReLU()
+        self.fc2 = nn.Linear(hidden_dim, output_dim)
+
+    def forward(self, x):
+        x = x.view(x.size(0), -1)
+        x = self.fc1(x)
+        x = self.relu(x)
+        x = self.fc2(x)
+        return x
+
+
+input_dim = 500 * 20
+hidden_dim = 128
+output_dim = 2
+
+model = ProteinModel(input_dim, hidden_dim, output_dim)
+
+criterion = nn.CrossEntropyLoss()
+optimizer = optim.Adam(model.parameters(), lr=0.001)
