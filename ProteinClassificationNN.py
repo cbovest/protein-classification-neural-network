@@ -36,3 +36,27 @@ non_transmembrane_labels = [0 for protein in non_transmembrane_seqs]
 sequences = transmembrane_seqs + non_transmembrane_seqs
 labels = transmembrane_labels + non_transmembrane_labels
 len(sequences) == len(labels)
+
+
+#Encode amino acid sequences for input into model and split test and training data
+train_sequences, test_sequences, train_labels, test_labels = train_test_split(sequences, labels, test_size=0.20, shuffle=True)
+
+amino_acids = 'ACDEFGHIKLMNPQRSTVWY'
+aa_to_int = {aa: i for i, aa in enumerate(amino_acids)}
+num_amino_acids = 20
+max_length = max(len(s) for s in sequences)
+
+def one_hot_encode_sequence(seq, aa_to_int, max_length):
+    one_hot_encoded = np.zeros((max_length, num_amino_acids), dtype=int)
+    for i, aa in enumerate(seq[:max_length]):
+        if aa in aa_to_int:
+            one_hot_encoded[i, aa_to_int[aa]] = 1
+    return one_hot_encoded
+
+train_encoded_sequences = [one_hot_encode_sequence(sequence, aa_to_int, max_length) for sequence in train_sequences]
+test_encoded_sequences = [one_hot_encode_sequence(sequence, aa_to_int, max_length) for sequence in test_sequences]
+train_array = np.array(train_encoded_sequences)
+test_array = np.array(test_encoded_sequences)
+
+train_labels = np.array(train_labels)
+test_labels = np.array(test_labels)
