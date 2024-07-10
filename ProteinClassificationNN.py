@@ -26,4 +26,13 @@ non_transmembrane = df['Transmembrane'].str.contains("FALSE")
 transmembrane_df = df[transmembrane & ~non_transmembrane]
 non_transmembrane_df = df[non_transmembrane & ~transmembrane]
 
+#Create a list of sequences for each dataframe from previous step, and a corresponding
+#list of labels for each sequence(1 for transmembrane proteins, 0 for non-transmembrane)
+transmembrane_seqs = transmembrane_df['Sequence'].tolist()
+transmembrane_labels = [1 for protein in transmembrane_seqs]
+non_transmembrane_seqs = non_transmembrane_df['Sequence'].tolist()
+non_transmembrane_labels = [0 for protein in non_transmembrane_seqs]
 
+sequences = transmembrane_seqs + non_transmembrane_seqs
+labels = transmembrane_labels + non_transmembrane_labels
+len(sequences) == len(labels)
