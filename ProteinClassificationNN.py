@@ -103,3 +103,38 @@ model = ProteinModel(input_dim, hidden_dim, output_dim)
 
 criterion = nn.CrossEntropyLoss()
 optimizer = optim.Adam(model.parameters(), lr=0.001)
+
+
+#Train the model
+batch_size = 32
+num_epochs = 10
+
+train_dataloader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=4)
+test_dataloader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False, num_workers=4)
+
+for epoch in range(num_epochs):
+    model.train()
+    running_loss = 0.0
+    for batch_sequences, batch_labels in train_dataloader:
+        optimizer.zero_grad()
+        outputs = model(batch_sequences)
+        loss = criterion(outputs, batch_labels)
+        loss.backward()
+        optimizer.step()
+        running_loss += loss.item()
+
+    print(f'Epoch [{epoch+1}/{num_epochs}], Loss: {running_loss/len(train_dataloader):.4f}')
+
+
+#Test the model
+model.eval()
+correct = 0
+total = 0
+with torch.no_grad():
+    for batch_sequences, batch_labels in test_dataloader:
+        outputs = model(batch_sequences)
+        _, predicted = torch.max(outputs.data, 1)
+        total += batch_labels.size(0)
+        correct += (predicted == batch_labels).sum().item()
+
+print(f'Accuracy of the model on the test set: {100 * correct / total:.2f}%')
