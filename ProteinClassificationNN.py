@@ -7,6 +7,7 @@ import numpy as np
 from io import BytesIO
 from sklearn.model_selection import train_test_split
 from torch.utils.data import DataLoader, Dataset
+import matplotlib.pyplot as plt
 
 query_url = "https://rest.uniprot.org/uniprotkb/stream?compressed=true&fields=accession%2Csequence%2Cft_transmem&format=tsv&query=%28%28organism_id%3A9606%29+AND+%28reviewed%3Atrue%29+AND+%28length%3A%5B80+TO+500%5D%29%29"
 uniprot_request = requests.get(query_url)
@@ -108,6 +109,8 @@ optimizer = optim.Adam(model.parameters(), lr=0.001)
 #Train the model
 batch_size = 32
 num_epochs = 10
+train_accuracies = []
+val_accuracies = []
 
 train_dataloader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=4)
 test_dataloader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False, num_workers=4)
@@ -115,13 +118,24 @@ test_dataloader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False,
 for epoch in range(num_epochs):
     model.train()
     running_loss = 0.0
+    correct_train = 0
+    total_train = 0
+
     for batch_sequences, batch_labels in train_dataloader:
-        optimizer.zero_grad()
         outputs = model(batch_sequences)
         loss = criterion(outputs, batch_labels)
+
+        optimizer.zero_grad()
         loss.backward()
         optimizer.step()
         running_loss += loss.item()
+
+        _, predicted = torch.max(outputs.data, 1)
+        total_train += batch_labels.size(0)
+        correct_train += (predicted == labels).sum().item()
+
+        train_accuracy = correct_train / total_train
+        train_accuracies.append(train_accuracy)
 
     print(f'Epoch [{epoch+1}/{num_epochs}], Loss: {running_loss/len(train_dataloader):.4f}')
 
@@ -137,4 +151,19 @@ with torch.no_grad():
         total += batch_labels.size(0)
         correct += (predicted == batch_labels).sum().item()
 
+        val_accuracy = correct / total
+        val_accuracies.append(val_accuracy)
+
 print(f'Accuracy of the model on the test set: {100 * correct / total:.2f}%')
+
+
+#Creating accuracy curve
+plt.figure(figsize=(10, 5))
+plt.plot(train_accuracies, label='Training Accuracy')
+plt.plot(val_accuracies, label='Validation Accuracy')
+plt.xlabel('Epochs')
+plt.ylabel('Accuracy')
+plt.title('Accuracy Curve')
+plt.legend()
+plt.xlim(0, 100)
+plt.show()
